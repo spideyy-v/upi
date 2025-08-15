@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pay with Points</title>
+  <style>
+    :root{
+      --bg:#0a0a0a; --card:#ffffff; --muted:#eef3ff; --brand:#e65100; --text:#111; --sub:#666;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial; background:var(--bg); color:var(--text); display:grid; place-items:center; min-height:100vh}
+    .wrap{width:min(960px,92vw)}
+
+    .card{background:var(--card); border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,.25); overflow:hidden}
+    .pad{padding:28px}
+
+    header{display:flex; align-items:center; justify-content:space-between}
+    header h1{font-size:28px; margin:0; font-weight:700}
+
+    .corner{position:absolute; right:24px; top:18px; width:64px; height:64px}
+    .corner::before,.corner::after{content:""; position:absolute; border:8px solid var(--brand);}
+    .corner::before{right:0; top:0; width:56px; height:20px; border-left:0; border-bottom:0; border-radius:0 16px 0 0}
+    .corner::after{right:0; top:0; width:20px; height:56px; border-left:0; border-bottom:0; border-radius:0 16px 0 0}
+
+    .tabs{display:flex; gap:8px; margin:16px 0 0}
+    .tab{flex:1; text-align:center; padding:12px 14px; border-radius:12px; border:1px solid #ddd; background:#fafafa; cursor:pointer; user-select:none; font-weight:600}
+    .tab.active{background:#fff; border-color:#bbb}
+
+    .panel{display:none}
+    .panel.active{display:block}
+
+    .bank-logos{background:var(--muted); padding:20px; border-radius:14px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px}
+    .logo{height:52px; display:grid; place-items:center; background:#fff; border-radius:12px; border:1px solid #e5e7eb; cursor:pointer; transition:transform .12s ease}
+    .logo:active{transform:scale(.98)}
+    .logo img{max-height:40px; max-width:120px}
+
+    .field{margin:18px 0 0}
+    .label{font-weight:600; margin:0 0 8px}
+    .select{display:flex; align-items:center; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden}
+    .select .icon{padding:12px 14px; background:#f8fafc}
+    .select select{flex:1; padding:14px; border:0; outline:0; font-size:15px}
+
+    .actions{margin:26px 0 6px}
+    .btn{width:100%; padding:14px 18px; background:var(--brand); color:#fff; border:0; border-radius:12px; font-weight:700; font-size:16px; cursor:pointer}
+    .btn:disabled{opacity:.6; cursor:not-allowed}
+
+    .divider{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; color:#999; margin:22px 0}
+    .divider::before,.divider::after{content:""; height:1px; background:#e5e7eb}
+
+    /* UPI */
+    .upi{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px}
+    .qr-card{border:1px solid #e5e7eb; border-radius:14px; padding:18px; display:grid; gap:10px; place-items:center; background:#fafafa}
+    .qr{width:220px; height:220px; background:#fff; border:1px solid #e5e7eb; border-radius:12px; display:grid; place-items:center; overflow:hidden}
+    .meta{font-size:14px; color:var(--sub)}
+    .row{display:flex; gap:10px}
+    .row input[type=text], .row input[type=number]{flex:1; padding:12px 14px; border:1px solid #e5e7eb; border-radius:12px; font-size:14px}
+    .row input[type=file]{flex:1}
+    .sbtn{padding:12px 14px; border:1px solid #e5e7eb; background:#fff; border-radius:12px; cursor:pointer}
+
+    @media (max-width:800px){
+      .bank-logos{grid-template-columns:repeat(2,1fr)}
+      .upi{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="pad">
+        <header>
+          <h1>Pay with Points</h1>
+          <div class="corner" aria-hidden="true"></div>
+        </header>
+
+        <div class="tabs" role="tablist">
+          <div class="tab active" data-tab="points" role="tab" aria-selected="true">Bank Points</div>
+          <div class="tab" data-tab="upi" role="tab" aria-selected="false">UPI (Scan & Pay)</div>
+        </div>
+
+        <section class="panel active" id="panel-points" aria-labelledby="points">
+          <div class="bank-logos" aria-label="Popular banks">
+            <button class="logo" data-bank="Bank of India" title="Bank of India"><img alt="Bank of India" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQaddmXGd2eck_oj-4Pb6eF_SJSTtI-G1Jvcw&s"/></button>
+            <button class="logo" data-bank="HDFC Bank" title="HDFC Bank"><img alt="HDFC Bank" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWJDFJmBBFEL-36cdbhulZc_VJxCzNjXMDVquuMZEG2_ExCkZEuP0OhXU&s=10"/></button>
+            <button class="logo" data-bank="SBI" title="SBI"><img alt="SBI" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4k5y2Y7ShD-rWOQ_kf_JXWfKTdIOC_3LZQw&s"/></button>
+            <button class="logo" data-bank="Federal Bank" title="Federal Bank"><img alt="Federal Bank" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcShv0GEjcn16B7MvBSbw8TyjJLrHu8hBIjW1yk9W4T7f_YBbhevGKlra0s&s=10"/></button>
+            <button class="logo" data-bank="Bank of Baroda" title="Bank of Baroda"><img alt="Bank of Baroda" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcShv0GEjcn16B7MvBSbw8TyjJLrHu8hBIjW1yk9W4T7f_YBbhevGKlra0s&s=10"/></button>
+            
+<br>
+          <div class="field">
+            <div class="label">Select Bank</div>
+            <div class="select">
+              <div class="icon">🏦</div>
+              <select id="bankSelect" aria-label="Select your bank">
+                <option value="">==Select Your Bank==</option>
+                <option>Bank of India</option>
+                <option>HDFC Bank</option>
+                <option>State Bank of India</option>
+                <option>Federal Bank</option>
+                <option>Bank of Baroda</option>
+              </select>
+            </div>
+          </div>
+<br>
+          <div class="actions">
+            <button class="btn" id="confirmBtn" disabled>Confirm</button>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-upi" aria-labelledby="upi">
+          <div class="divider"><span>Scan & Pay</span></div>
+          <div class="upi">
+            <div class="qr-card">
+              <div class="qr" id="qrBox">
+                <!-- Default placeholder QR (replace by upload) -->
+                <img id="qrImg" alt="QR Code" width="220" height="220" src="upi.png"/>
+                
+              </div><br>
+                <button class="logo" data-bank="upi" title="SBI"><img alt="Upi" src="https://upload.wikimedia.org/wikipedia/commons/f/fa/UPI-Logo.png"/></button>
+                
+                
+              <!---<div class="meta">Upload your merchant QR or leave the sample.</div>
+              <div class="row">
+                <input type="file" id="qrFile" accept="image/*" />
+                <button class="sbtn" id="downloadQR">Download</button>
+              </div>
+            </div>
+--->
+            <div class="pad" style="padding:0">
+              <div class="field">
+                <div class="label">UPI ID</div>
+                <div class="row">
+                  <input type="text" id="upiId" placeholder="Enter your UPI id" value=""/>
+                  <!---<button class="sbtn" id="copyUpi">Copy</button>--->
+                </div>
+              </div>
+              <div class="field">
+                <!---<div class="label">Amount (INR)</div>
+                <div class="row">
+                  <input type="number" id="amount" min="1" step="1" placeholder="e.g., 499"/>
+                </div>
+              </div>
+              <div class="field">
+                <div class="label">Note</div>
+                <div class="row">
+                  <input type="text" id="note" placeholder="optional"/>--->
+                </div>
+              </div>
+              <div class="actions">
+                <button class="btn" onclick="alert('Payment Done! Wait for 10 - 15 minutes...')" id="upie">Payment Done!</button>
+              </div>
+              <p class="meta">The UPI link opens your app with prefilled fields on supported devices. Use the QR for scan-and-pay.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tabs
+    const tabs = document.querySelectorAll('.tab');
+    const panels = { points: document.getElementById('panel-points'), upi: document.getElementById('panel-upi') };
+    tabs.forEach(t=>t.addEventListener('click',()=>{
+      tabs.forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      Object.values(panels).forEach(p=>p.classList.remove('active'));
+      panels[t.dataset.tab].classList.add('active');
+      t.setAttribute('aria-selected','true');
+    }))
+
+    // Bank shortcuts fill select
+    const bankSelect = document.getElementById('bankSelect');
+    document.querySelectorAll('.logo[data-bank]').forEach(b=>b.addEventListener('click',()=>{
+      const v = b.getAttribute('data-bank');
+      [...bankSelect.options].forEach((o)=>{ o.selected = (o.text===v); });
+      bankSelect.dispatchEvent(new Event('change'));
+    }))
+
+    // Confirm enable
+    const confirmBtn = document.getElementById('confirmBtn');
+    bankSelect.addEventListener('change',()=>{
+      confirmBtn.disabled = !bankSelect.value;
+    })
+    confirmBtn.addEventListener('click',()=>{
+      if(!bankSelect.value) return;
+      alert(`Continuing with: ${bankSelect.value}`);
+    })
+
+    // UPI helpers
+    const upiId = document.getElementById('upiId');
+    const amount = document.getElementById('amount');
+    const note = document.getElementById('note');
+    const openUpi = document.getElementById('openUpi');
+    const copyUpi = document.getElementById('copyUpi');
+
+    copyUpi.addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(upiId.value.trim()); copyUpi.textContent='Copied'; setTimeout(()=>copyUpi.textContent='Copy',1200);}catch{ alert('Copy failed'); }
+    })
+
+    openUpi.addEventListener('click',()=>{
+      const pa = encodeURIComponent(upiId.value.trim());
+      const am = amount.value? `&am=${encodeURIComponent(amount.value)}` : '';
+      const tn = note.value? `&tn=${encodeURIComponent(note.value)}` : '';
+      const url = `upi://pay?pa=${pa}&pn=${encodeURIComponent('Merchant')}${am}${tn}&cu=INR`;
+      window.location.href = url;
+    })
+
+    // QR upload + download
+    const qrFile = document.getElementById('qrFile');
+    const qrImg = document.getElementById('qrImg');
+    const downloadQR = document.getElementById('downloadQR');
+
+    qrFile.addEventListener('change',()=>{
+      const f = qrFile.files?.[0];
+      if(!f) return;
+      const reader = new FileReader();
+      reader.onload = e=>{ qrImg.src = e.target.result; };
+      reader.readAsDataURL(f);
+    })
+
+    downloadQR.addEventListener('click',()=>{
+      const a = document.createElement('a');
+      a.href = qrImg.src; a.download = 'upi-qr'; a.click();
+    })
+  </script>
+</body>
+  </html>
+  
